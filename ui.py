@@ -72,23 +72,26 @@ def render_chat_ui(profile, chatbot, mentor_mode):
             color: {user_color};
             padding: 10px; border-radius: 16px; margin: 5px 0;
             text-align: right; max-width: 75%; float: right; clear: both;
+            font-family: 'Roboto', sans-serif;
         }}
         .bot-bubble {{
             background-color: {bot_bg};
             color: {bot_color};
             padding: 10px; border-radius: 16px; margin: 5px 0;
             text-align: left; max-width: 75%; float: left; clear: both;
+            font-family: 'Roboto', sans-serif;
         }}
         .chat-container {{
             background-color: {theme_bg};
             padding: 10px; border-radius: 10px; height: 500px; overflow-y: auto;
+            font-family: 'Roboto', sans-serif;
         }}
         </style>
         """,
         unsafe_allow_html=True
     )
 
-    st.title("🎯 Personalized Career Guidance Chatbot")
+    st.title("🎯 AmbitionBot: The ultimate career guidance chatbot")
     st.subheader(f"💡 Active Profile: {profile['name']} ({profile.get('language', 'English')})")
 
     # Chat Container
@@ -110,7 +113,7 @@ def render_chat_ui(profile, chatbot, mentor_mode):
         with chat_container:
             st.markdown(f"<div class='user-bubble'>{prompt}</div>", unsafe_allow_html=True)
 
-        with st.spinner("Thinking..."):
+        with st.spinner("Figuring out..."):
             reply_result = chatbot.get_reply(
                 profile=profile,
                 messages=profile["chat_history"],
