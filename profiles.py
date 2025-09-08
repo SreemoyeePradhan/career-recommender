@@ -1,4 +1,3 @@
-# profiles.py
 import os
 import json
 
@@ -40,7 +39,7 @@ def create_profile(profiles, name, education="", interests=None, strengths=None,
         "strengths": strengths or [],
         "goal": goal,
         "chat_history": [],
-        "language": language,  # ✅ New field
+        "language": language,  # ✅ Preferred language
     }
     save_profiles(profiles)
     return profiles

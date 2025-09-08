@@ -1,4 +1,3 @@
-# ui.py
 import streamlit as st
 from profiles import save_profiles
 from chatbot import generate_roadmap_chart
@@ -14,7 +13,6 @@ def sidebar_profile_manager(profiles, active_profile):
     if selected_profile != "-- None --":
         active_profile = selected_profile
 
-    # --- Delete Profile Button ---
     if active_profile:
         if st.sidebar.button("🗑️ Delete Profile"):
             profiles.pop(active_profile)
@@ -55,7 +53,6 @@ def sidebar_profile_manager(profiles, active_profile):
 def render_chat_ui(profile, chatbot, mentor_mode):
     """Main chat area for conversation with visual roadmap integration."""
 
-    # Dark/Light Theme
     dark_mode = st.session_state.get("dark_mode", True)
     user_bg = "#DCF8C6" if dark_mode else "#E1FFC7"
     user_color = "#000000"
@@ -63,7 +60,6 @@ def render_chat_ui(profile, chatbot, mentor_mode):
     bot_color = "#FFFFFF" if dark_mode else "#000000"
     theme_bg = "#121212" if dark_mode else "#FFFFFF"
 
-    # Custom CSS
     st.markdown(
         f"""
         <style>
@@ -94,7 +90,6 @@ def render_chat_ui(profile, chatbot, mentor_mode):
     st.title("🎯 AmbitionBot: The ultimate career guidance chatbot")
     st.subheader(f"💡 Active Profile: {profile['name']} ({profile.get('language', 'English')})")
 
-    # Chat Container
     chat_container = st.container()
     with chat_container:
         for msg in profile["chat_history"]:
@@ -105,7 +100,6 @@ def render_chat_ui(profile, chatbot, mentor_mode):
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
 
-    # Chat Input
     if prompt := st.chat_input("Ask about careers, skills, or roadmaps..."):
         profile["chat_history"].append({"role": "user", "content": prompt})
         save_profiles(st.session_state.profiles)
@@ -137,5 +131,8 @@ def render_chat_ui(profile, chatbot, mentor_mode):
             chat_entry["task"] = reply_result.get("task")
         profile["chat_history"].append(chat_entry)
 
+        # ✅ Save updated language preference too
+        st.session_state.profiles[profile["name"]] = profile
         save_profiles(st.session_state.profiles)
+
         st.rerun()

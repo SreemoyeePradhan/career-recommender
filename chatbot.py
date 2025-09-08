@@ -19,6 +19,21 @@ class CareerChatbot:
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model)
 
+    def detect_language(self, text: str) -> str:
+        """Detect the language of the given text using Gemini."""
+        detect_prompt = f"""
+Identify the language of the following user text.
+Return ONLY the language name (like 'English', 'Spanish', 'French', 'Hindi').
+
+Text:
+{text}
+"""
+        try:
+            response = self.model.generate_content(detect_prompt)
+            return response.text.strip().split()[0]
+        except Exception:
+            return "English"  # fallback
+
     def build_conversation_context(
         self, profile: dict, messages: list,
         mentor_mode: bool = True, task: str = None, language: str = "English"
@@ -82,9 +97,8 @@ Now continue the conversation.
     def _force_translate(self, text: str, target_lang: str) -> str:
         """Forcefully translate text to target language, ignoring JSON blocks."""
         if target_lang.lower() == "english":
-            return text  # no need to translate
+            return text
 
-        # Separate JSON (if any) from text
         json_part = ""
         if "{" in text and "}" in text:
             try:
@@ -95,7 +109,6 @@ Now continue the conversation.
             except Exception:
                 pass
 
-        # Strict translation step
         translate_prompt = f"""
 You are a professional translator.
 Translate ONLY the following text into {target_lang}.
@@ -110,19 +123,27 @@ Text to translate:
             response = self.model.generate_content(translate_prompt)
             translated_text = response.text.strip()
         except Exception:
-            translated_text = text  # fallback
+            translated_text = text
 
-        # Recombine translated text + untouched JSON
         return translated_text + ("\n\n" + json_part if json_part else "")
 
     def get_reply(
         self, profile: dict, messages: list, mentor_mode: bool = True,
-        return_json_roadmap: bool = False, task: str = None, language: str = "English"
+        return_json_roadmap: bool = False, task: str = None, language: str = None
     ) -> dict:
         """
         Generates a reply using Gemini, optionally extracting roadmap JSON.
         Returns: {"text": str, "roadmap": dict or None, "task": str or None}
         """
+
+        # Auto-detect latest user message language
+        if messages and messages[-1]["role"] == "user":
+            detected_lang = self.detect_language(messages[-1]["content"])
+            profile["language"] = detected_lang
+            language = detected_lang
+        else:
+            language = profile.get("language", "English")
+
         prompt = self.build_conversation_context(profile, messages, mentor_mode, task, language)
         response = self.model.generate_content(prompt)
         text = response.text.strip()
@@ -137,7 +158,6 @@ Text to translate:
             except Exception:
                 roadmap = None
 
-        # Ensure final output is in the selected language
         final_text = self._force_translate(text, language)
 
         return {"text": final_text, "roadmap": roadmap, "task": task}
@@ -154,20 +174,16 @@ def generate_roadmap_chart(roadmap, task="skill_gap"):
     for i, week in enumerate(weeks):
         items = roadmap[week]
 
-        # If it's a list of dicts (resource recommendations), stringify nicely
         if isinstance(items, list) and all(isinstance(x, dict) for x in items):
             res_texts = [
                 f"Topic: {x.get('Topic','')}\nResource: {x.get('Resource','')}\nAction: {x.get('Action','')}"
                 for x in items
             ]
-        # If it's a simple list of strings (skill gap tasks)
         elif isinstance(items, list):
             res_texts = [str(x) for x in items]
-        # Single value
         else:
             res_texts = [str(items)]
 
-        # Add bars for each item in that week
         for res in res_texts:
             fig.add_trace(go.Bar(
                 x=[1], y=[week], orientation="h",
